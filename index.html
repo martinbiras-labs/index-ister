@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Párovanie faktúr a platieb · Neplatiči</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#EEF0F4; --surface:#FFFFFF; --surface-2:#F7F8FA;
+    --ink:#14181F; --ink-soft:#5A6473; --ink-faint:#8A93A3;
+    --line:#E2E6EC; --line-strong:#CDD3DD;
+    --primary:#2A45C8; --primary-700:#1E33A2; --primary-50:#EAEDFB;
+    --paid:#0E8A55; --paid-bg:#E5F3EC;
+    --partial:#B16500; --partial-bg:#FAF0DD;
+    --unpaid:#C42A45; --unpaid-bg:#FBE7EB;
+    --shadow:0 1px 2px rgba(20,24,31,.05), 0 8px 24px -12px rgba(20,24,31,.18);
+    --radius:14px;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono","Segoe UI Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--sans); background:var(--bg); color:var(--ink);
+    -webkit-font-smoothing:antialiased; line-height:1.45; font-size:15px;
+  }
+  .tnum{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 22px 80px}
+
+  /* Header */
+  header.app{display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:24px; flex-wrap:wrap}
+  .brand h1{font-size:23px; font-weight:680; letter-spacing:-.02em; margin:0 0 4px}
+  .brand p{margin:0; color:var(--ink-soft); font-size:14.5px; max-width:48ch}
+  .brand .tag{display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600;
+    color:var(--primary-700); background:var(--primary-50); padding:5px 10px; border-radius:999px; margin-bottom:12px}
+  .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
+
+  /* Upload cards */
+  .uploads{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+  .drop{padding:18px}
+  .drop .head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+  .drop .head .lbl{display:flex; align-items:center; gap:10px; font-weight:640; font-size:15px}
+  .step{width:24px;height:24px;border-radius:7px;background:var(--ink);color:#fff;display:grid;place-items:center;
+    font-size:13px;font-weight:700; font-variant-numeric:tabular-nums}
+  .drop .head .count{font-size:13px;color:var(--ink-soft); font-variant-numeric:tabular-nums}
+  .zone{border:1.5px dashed var(--line-strong); border-radius:11px; background:var(--surface-2);
+    padding:22px 16px; text-align:center; cursor:pointer; transition:border-color .15s, background .15s}
+  .zone:hover{border-color:var(--primary); background:var(--primary-50)}
+  .zone.drag{border-color:var(--primary); background:var(--primary-50)}
+  .zone .ztitle{font-weight:560; font-size:14px}
+  .zone .zhint{font-size:12.5px; color:var(--ink-faint); margin-top:4px}
+  .zone svg{display:block;margin:0 auto 8px;color:var(--ink-faint)}
+  .files{margin-top:12px; display:flex; flex-direction:column; gap:5px; max-height:148px; overflow:auto}
+  .file-pill{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12.5px}
+  .file-pill .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+  .file-pill .x{cursor:pointer;color:var(--ink-faint);border:none;background:none;font-size:15px;line-height:1;padding:0 2px}
+  .file-pill .x:hover{color:var(--unpaid)}
+  .file-pill.err{border-color:var(--unpaid-bg); background:var(--unpaid-bg)}
+  .file-pill.err .nm{color:var(--unpaid)}
+
+  /* Action row */
+  .actions{display:flex; align-items:center; gap:14px; margin:4px 0 26px; flex-wrap:wrap}
+  button.btn{font-family:inherit; font-size:14.5px; font-weight:620; border-radius:10px; cursor:pointer; border:1px solid transparent; padding:11px 20px; transition:background .15s,border-color .15s,color .15s}
+  .btn-primary{background:var(--primary); color:#fff}
+  .btn-primary:hover{background:var(--primary-700)}
+  .btn-primary:disabled{background:var(--line-strong); color:#fff; cursor:not-allowed}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border-color:var(--line-strong)}
+  .btn-ghost:hover{color:var(--ink); border-color:var(--ink-soft)}
+  .prog{flex:1; min-width:160px; height:7px; background:var(--line); border-radius:999px; overflow:hidden; display:none}
+  .prog.show{display:block}
+  .prog .bar{height:100%; width:0%; background:var(--primary); border-radius:999px; transition:width .2s}
+  .status-msg{font-size:13px; color:var(--ink-soft)}
+
+  /* Results */
+  #results{display:none}
+  #results.show{display:block; animation:fade .35s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+
+  .summary{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:14px; margin-bottom:8px}
+  .stat{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow)}
+  .stat.hero{background:linear-gradient(180deg,#1A2233 0%,#14181F 100%); border-color:#14181F; color:#fff}
+  .stat .k{font-size:12.5px; font-weight:600; letter-spacing:.01em; color:var(--ink-soft); text-transform:uppercase}
+  .stat.hero .k{color:#A9B4CC}
+  .stat .v{font-size:30px; font-weight:700; letter-spacing:-.02em; margin-top:6px; font-variant-numeric:tabular-nums}
+  .stat .v small{font-size:16px;font-weight:600;color:var(--ink-faint);margin-left:3px}
+  .stat.hero .v small{color:#7F8BA8}
+  .stat .sub{font-size:12.5px; color:var(--ink-faint); margin-top:3px}
+  .stat.hero .sub{color:#8893AE}
+
+  .recobar{display:flex; height:10px; border-radius:999px; overflow:hidden; margin:18px 0 22px; background:var(--line); box-shadow:inset 0 0 0 1px var(--line)}
+  .recobar i{display:block; height:100%}
+  .recobar .s-paid{background:var(--paid)}
+  .recobar .s-part{background:var(--partial)}
+  .recobar .s-unpaid{background:var(--unpaid)}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft); margin:-12px 0 22px}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+
+  /* Toolbar */
+  .toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  .tabs{display:flex; gap:4px; background:var(--surface); border:1px solid var(--line); padding:4px; border-radius:11px; flex-wrap:wrap}
+  .tab{border:none; background:none; font-family:inherit; font-size:13.5px; font-weight:560; color:var(--ink-soft);
+    padding:7px 13px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:7px}
+  .tab:hover{color:var(--ink)}
+  .tab.active{background:var(--ink); color:#fff}
+  .tab .badge{font-size:11.5px; font-weight:700; background:rgba(0,0,0,.07); color:inherit; padding:1px 7px; border-radius:999px; font-variant-numeric:tabular-nums}
+  .tab.active .badge{background:rgba(255,255,255,.2)}
+  .spacer{flex:1}
+  .search{position:relative}
+  .search input{font-family:inherit; font-size:13.5px; border:1px solid var(--line-strong); background:var(--surface);
+    border-radius:9px; padding:8px 12px 8px 32px; width:210px; color:var(--ink)}
+  .search input:focus{outline:none; border-color:var(--primary)}
+  .search svg{position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--ink-faint)}
+
+  /* Table */
+  .tablecard{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden}
+  .scroll{overflow-x:auto}
+  table{width:100%; border-collapse:collapse; font-size:14px}
+  thead th{text-align:left; font-size:11.5px; font-weight:680; text-transform:uppercase; letter-spacing:.03em;
+    color:var(--ink-faint); padding:13px 16px; border-bottom:1px solid var(--line); white-space:nowrap; cursor:pointer; user-select:none}
+  thead th .arrow{opacity:.4; font-size:10px}
+  thead th.num, td.num{text-align:right; font-variant-numeric:tabular-nums}
+  tbody td{padding:13px 16px; border-bottom:1px solid var(--line); vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--surface-2)}
+  .cust{font-weight:560}
+  .muted{color:var(--ink-faint)}
+  .fid{font-family:var(--mono); font-size:12.5px; color:var(--ink-soft)}
+  .vs{font-family:var(--mono); font-size:12.5px; color:var(--ink-faint)}
+  .amt{font-weight:600}
+  .chip{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:640; padding:4px 10px; border-radius:999px; white-space:nowrap}
+  .chip i{width:6px;height:6px;border-radius:50%}
+  .chip.paid{background:var(--paid-bg); color:var(--paid)} .chip.paid i{background:var(--paid)}
+  .chip.part{background:var(--partial-bg); color:var(--partial)} .chip.part i{background:var(--partial)}
+  .chip.unpaid{background:var(--unpaid-bg); color:var(--unpaid)} .chip.unpaid i{background:var(--unpaid)}
+  .warn{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--partial-bg);
+    color:var(--partial);font-size:11px;font-weight:800;margin-left:7px;cursor:help; vertical-align:middle}
+  .approx{display:inline-block;margin-left:7px;font-size:10.5px;font-weight:700;color:var(--partial);
+    background:var(--partial-bg);padding:2px 8px;border-radius:999px;cursor:help;vertical-align:middle;white-space:nowrap}
+  .amtoggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft);cursor:pointer;
+    user-select:none;padding:7px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);white-space:nowrap}
+  .amtoggle:hover{color:var(--ink);border-color:var(--ink-soft)}
+  .amtoggle input{accent-color:var(--primary);width:15px;height:15px;cursor:pointer}
+  .empty{padding:46px 20px; text-align:center; color:var(--ink-faint)}
+  .empty .big{font-size:15px; color:var(--ink-soft); font-weight:560; margin-bottom:4px}
+
+  .footnote{font-size:12px; color:var(--ink-faint); margin-top:16px; line-height:1.6}
+  .toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff;
+    padding:11px 18px; border-radius:10px; font-size:13.5px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:.25s}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:760px){
+    .uploads{grid-template-columns:1fr}
+    .summary{grid-template-columns:1fr 1fr}
+    .stat.hero{grid-column:1/-1}
+    .search input{width:140px}
+  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app">
+    <div class="brand">
+      <span class="tag"><span class="dot"></span>Spracovanie prebieha vo vašom prehliadači</span>
+      <h1>Párovanie faktúr a platieb</h1>
+      <p>Nahrajte vystavené faktúry a výpisy z účtu. Nástroj ich spáruje cez variabilný symbol a sumu a vypíše, kto ešte nezaplatil.</p>
+    </div>
+  </header>
+
+  <section class="uploads">
+    <div class="card drop">
+      <div class="head">
+        <div class="lbl"><span class="step">1</span>Faktúry</div>
+        <div class="count" id="cnt-fakt">0 súborov · 0 faktúr</div>
+      </div>
+      <div class="zone" id="zone-fakt">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M12 11v6M9 14h6"/></svg>
+        <div class="ztitle">Pretiahnite faktúry sem alebo kliknite</div>
+        <div class="zhint">PDF faktúry alebo .zip · môžete vybrať viac naraz</div>
+      </div>
+      <input type="file" id="in-fakt" accept=".pdf,.zip,application/pdf,application/zip" multiple hidden>
+      <div class="files" id="files-fakt"></div>
+    </div>
+
+    <div class="card drop">
+      <div class="head">
+        <div class="lbl"><span class="step">2</span>Výpisy z účtu</div>
+        <div class="count" id="cnt-vyp">0 súborov · 0 platieb</div>
+      </div>
+      <div class="zone" id="zone-vyp">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+        <div class="ztitle">Pretiahnite výpisy sem alebo kliknite</div>
+        <div class="zhint">PDF výpisy z banky alebo .zip · môžete vybrať viac naraz</div>
+      </div>
+      <input type="file" id="in-vyp" accept=".pdf,.zip,application/pdf,application/zip" multiple hidden>
+      <div class="files" id="files-vyp"></div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="run" disabled>Vyhodnotiť</button>
+    <button class="btn btn-ghost" id="reset">Vyčistiť všetko</button>
+    <div class="prog" id="prog"><div class="bar" id="prog-bar"></div></div>
+    <div class="status-msg" id="status"></div>
+  </div>
+
+  <section id="results">
+    <div class="summary">
+      <div class="stat hero">
+        <div class="k">Nezaplatená suma</div>
+        <div class="v tnum" id="s-owed">0,00 <small>€</small></div>
+        <div class="sub" id="s-owed-sub">0 neuhradených faktúr</div>
+      </div>
+      <div class="stat">
+        <div class="k">Neplatiči</div>
+        <div class="v tnum" id="s-debtors">0</div>
+        <div class="sub" id="s-debtors-sub">odberateľov</div>
+      </div>
+      <div class="stat">
+        <div class="k">Zaplatené faktúry</div>
+        <div class="v tnum" id="s-paid">0</div>
+        <div class="sub" id="s-paid-sub">z 0 spolu</div>
+      </div>
+      <div class="stat">
+        <div class="k">Prijaté platby</div>
+        <div class="v tnum" id="s-payments">0</div>
+        <div class="sub" id="s-payments-sub">vo výpisoch</div>
+      </div>
+    </div>
+
+    <div class="recobar" id="recobar" title="Pomer súm faktúr">
+      <i class="s-paid" style="width:0%"></i><i class="s-part" style="width:0%"></i><i class="s-unpaid" style="width:0%"></i>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--paid)"></i> Zaplatené</span>
+      <span><i style="background:var(--partial)"></i> Čiastočne</span>
+      <span><i style="background:var(--unpaid)"></i> Nezaplatené</span>
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="unpaid">Neplatiči <span class="badge" id="b-unpaid">0</span></button>
+        <button class="tab" data-tab="partial">Čiastočne <span class="badge" id="b-partial">0</span></button>
+        <button class="tab" data-tab="paid">Zaplatené <span class="badge" id="b-paid">0</span></button>
+        <button class="tab" data-tab="all">Všetky faktúry <span class="badge" id="b-all">0</span></button>
+        <button class="tab" data-tab="payments">Prijaté platby <span class="badge" id="b-pay">0</span></button>
+      </div>
+      <div class="spacer"></div>
+      <label class="amtoggle" title="Ak faktúra nemá platbu s rovnakým variabilným symbolom, skúsi sa spárovať s voľnou platbou rovnakej sumy (po dátume vystavenia). Takéto páry sú označené „≈ podľa sumy“ – overte ich.">
+        <input type="checkbox" id="amt-toggle" checked> Párovať aj podľa sumy
+      </label>
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" id="search" placeholder="Hľadať meno alebo VS…">
+      </div>
+      <button class="btn btn-ghost" id="copy">Kopírovať</button>
+      <button class="btn btn-ghost" id="csv">Export CSV</button>
+    </div>
+
+    <div class="tablecard">
+      <div class="scroll"><table id="table"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+    </div>
+
+    <p class="footnote" id="foot"></p>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const pdfjs = window.pdfjsLib;
+if (pdfjs) pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+const $ = s => document.querySelector(s);
+const state = {
+  faktFiles: [],   // {name, buf}
+  vypFiles: [],
+  invoices: [],
+  payments: [],
+  results: [],
+  tab: "unpaid",
+  search: "",
+  amountMatch: true,
+  sort: {key:"owed", dir:-1}
+};
+
+/* ---------- helpers ---------- */
+function parseEuro(raw){
+  if(raw==null) return null;
+  let s = String(raw).replace(/\u00a0/g,"").replace(/\s/g,"").trim();
+  let neg = s.indexOf("-")>=0; s = s.replace(/-/g,"");
+  if(s.indexOf(".")>=0 && s.indexOf(",")>=0) s = s.replace(/\./g,"").replace(",", ".");
+  else if(s.indexOf(",")>=0) s = s.replace(",", ".");
+  s = s.replace(/[^0-9.]/g,"");
+  const parts = s.split(".");
+  if(parts.length>2) s = parts.slice(0,-1).join("") + "." + parts[parts.length-1];
+  const v = parseFloat(s);
+  if(isNaN(v)) return null;
+  return neg ? -v : v;
+}
+const fmtEur = n => (n==null?"—":n.toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2})+" €");
+const onlyDigits = s => (s||"").replace(/\D/g,"");
+function parseDate(d){ if(!d) return null; const m=/(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(d); return m?new Date(+m[3],+m[2]-1,+m[1]):null; }
+
+/* group pdf.js text items into visual rows */
+function groupRows(items){
+  const its = items.filter(i=>i.str && i.str.trim()!=="").map(i=>({
+    str:i.str, x:i.transform[4], y:i.transform[5], x1:i.transform[4]+(i.width||0)
+  }));
+  its.sort((a,b)=> (b.y-a.y) || (a.x-b.x));
+  const rows=[];
+  for(const it of its){
+    let r=null;
+    for(const cand of rows){ if(Math.abs(cand.y-it.y)<=3.5){ r=cand; break; } }
+    if(!r){ r={y:it.y, items:[]}; rows.push(r); }
+    r.items.push(it);
+  }
+  for(const r of rows){ r.items.sort((a,b)=>a.x-b.x); r.text = r.items.map(i=>i.str).join(" "); }
+  rows.sort((a,b)=> b.y-a.y);
+  return rows;
+}
+async function pdfRows(buf){
+  const doc = await pdfjs.getDocument({data:buf, useWorkerFetch:false, isEvalSupported:false}).promise;
+  const pages=[];
+  for(let p=1;p<=doc.numPages;p++){
+    const page = await doc.getPage(p);
+    const tc = await page.getTextContent();
+    pages.push(groupRows(tc.items));
+  }
+  return pages;
+}
+
+/* ---------- invoice parser ---------- */
+function parseInvoice(rows, fname){
+  const full = rows.map(r=>r.text).join("\n");
+  const find = rx => { const m=rx.exec(full); return m?m[1]:null; };
+  let vs = find(/\bVS:?\s*([0-9]{3,})/i);
+  let number = find(/doklad[^0-9]{0,6}([0-9]{5,})/i) || find(/č[^0-9]{0,3}([0-9]{5,})/i) || vs;
+  if(!vs) vs = number;
+  const totM = /hrade[^\S\n]*([0-9][0-9 \u00a0.,]*)\s*\u20ac/i.exec(full)
+            || /hrade[^\S\n]*([0-9][0-9 \u00a0.,]*)/i.exec(full);
+  const total = totM ? parseEuro(totM[1]) : null;
+  const issue = find(/vystavenia:?\s*([0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4})/i);
+  const due   = find(/splatnosti:?\s*([0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4})/i);
+
+  // customer name: right column, first non-empty row below "Odberate"
+  let odb=null;
+  outer: for(const r of rows){ for(const it of r.items){ if(it.str.indexOf("Odberate")>=0){ odb=it; break outer; } } }
+  let customer=null;
+  if(odb){
+    const colx = odb.x - 5;
+    for(const r of rows){
+      if(r.y >= odb.y-1) continue;            // only rows below the header
+      const t = r.items.filter(it=>it.x>=colx).map(it=>it.str).join(" ").trim();
+      if(t){ customer=t; break; }
+    }
+  }
+  return { file:fname, number, vs:onlyDigits(vs), total, issue, due,
+           customer: customer || "(neznámy odberateľ)" };
+}
+
+/* ---------- bank statement parser ---------- */
+const DATE_START = /^\s*(\d{1,2}\.\d{1,2}\.\d{4})\b/;
+const MONEY = /(-?)\s?(\d[\d \u00a0]*,\d{2})(?!\d)/g;
+function parseStatement(pages, fname){
+  const out=[];
+  for(const rows of pages){
+    if(!rows.length) continue;
+    let pageRight=0; for(const r of rows) for(const it of r.items) if(it.x1>pageRight) pageRight=it.x1;
+    const amtX = pageRight - 120;
+    const nameX = pageRight * 0.40;
+    for(let i=0;i<rows.length;i++){
+      const r=rows[i];
+      const dm = DATE_START.exec(r.text);
+      if(!dm) continue;
+      // amount = rightmost money value on the line (the Čiastka EUR column);
+      // regex-based so it works regardless of how the PDF chunks the text
+      let last=null, mm; MONEY.lastIndex=0;
+      while((mm=MONEY.exec(r.text))!==null) last=mm;
+      if(!last) continue;
+      const amount = (last[1]==="-"?-1:1) * (parseEuro(last[2])||0);
+      if(amount===0) continue;
+      const date = dm[1];
+      // counterparty name = next row, mid-right column
+      let name=null;
+      if(i+1<rows.length){
+        let nm = rows[i+1].items.filter(it=> it.x>=nameX && it.x1<amtX).map(it=>it.str).join(" ").trim();
+        if(!nm) nm = rows[i+1].text.replace(DATE_START,"").trim();   // fallback: next-line text minus date
+        nm = nm.replace(/^(Bezhotovostn\S*\s+)?(vklad|v[\u00fdy]ber)\s*/i,"")
+               .replace(/^N[\u00e1a]kup:.*$/i,"").replace(/^Platba\s+kartou\s*/i,"").trim();
+        name = nm || null;
+      }
+      // reference block = following rows until next transaction
+      let ref="";
+      for(let j=i+1;j<Math.min(i+5,rows.length);j++){
+        if(j>i+1 && DATE_START.test(rows[j].text)) break;
+        ref += " " + rows[j].text;
+      }
+      let vsm = /\bVS:?\s*([0-9]{2,})/i.exec(ref) || /VS([0-9]{2,})/i.exec(ref);
+      const vs = vsm ? onlyDigits(vsm[1]) : "";
+      out.push({ date, dateObj:parseDate(date), amount, vs, name:name||"(neuvedené)", file:fname });
+    }
+  }
+  return out;
+}
+
+/* ---------- zip / file intake ---------- */
+async function expandFiles(fileList){
+  const result=[]; const errors=[];
+  for(const f of fileList){
+    const lower=f.name.toLowerCase();
+    try{
+      const buf = await f.arrayBuffer();
+      if(lower.endsWith(".zip")){
+        const zip = await JSZip.loadAsync(buf);
+        const entries = Object.values(zip.files).filter(e=>!e.dir && /\.pdf$/i.test(e.name) && !e.name.includes("__MACOSX") && !e.name.split("/").pop().startsWith("."));
+        for(const e of entries){
+          const pdfBuf = await e.async("arraybuffer");
+          result.push({name:e.name.split("/").pop(), buf:pdfBuf});
+        }
+      } else if(lower.endsWith(".pdf")){
+        result.push({name:f.name, buf});
+      } else { errors.push({name:f.name, msg:"nepodporovaný typ"}); }
+    }catch(err){ errors.push({name:f.name, msg:"chyba čítania"}); }
+  }
+  return {result, errors};
+}
+
+/* ---------- UI: file zones ---------- */
+function pill(name, onRemove, err){
+  const d=document.createElement("div"); d.className="file-pill"+(err?" err":"");
+  const s=document.createElement("span"); s.className="nm"; s.textContent=name; s.title=name;
+  d.appendChild(s);
+  if(onRemove){ const b=document.createElement("button"); b.className="x"; b.innerHTML="&times;"; b.title="Odstrániť"; b.onclick=onRemove; d.appendChild(b); }
+  return d;
+}
+function renderFiles(){
+  const ff=$("#files-fakt"); ff.innerHTML="";
+  state.faktFiles.forEach((f,idx)=> ff.appendChild(pill(f.name, ()=>{ state.faktFiles.splice(idx,1); renderFiles(); updateRun(); })));
+  const vf=$("#files-vyp"); vf.innerHTML="";
+  state.vypFiles.forEach((f,idx)=> vf.appendChild(pill(f.name, ()=>{ state.vypFiles.splice(idx,1); renderFiles(); updateRun(); })));
+  $("#cnt-fakt").textContent = `${state.faktFiles.length} ${plur(state.faktFiles.length,"súbor","súbory","súborov")}`;
+  $("#cnt-vyp").textContent  = `${state.vypFiles.length} ${plur(state.vypFiles.length,"súbor","súbory","súborov")}`;
+}
+function plur(n,a,b,c){ n=Math.abs(n); if(n===1) return a; if(n>=2&&n<=4) return b; return c; }
+function updateRun(){ $("#run").disabled = !(state.faktFiles.length && state.vypFiles.length); }
+
+function wireZone(zoneSel, inputSel, target){
+  const zone=$(zoneSel), input=$(inputSel);
+  zone.onclick=()=>input.click();
+  input.onchange=async()=>{ await intake([...input.files], target); input.value=""; };
+  ["dragover","dragenter"].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault(); zone.classList.add("drag");}));
+  ["dragleave","drop"].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault(); zone.classList.remove("drag");}));
+  zone.addEventListener("drop", async e=>{ if(e.dataTransfer.files.length) await intake([...e.dataTransfer.files], target); });
+}
+async function intake(files, target){
+  const {result, errors} = await expandFiles(files);
+  const arr = target==="fakt" ? state.faktFiles : state.vypFiles;
+  for(const r of result){ if(!arr.some(x=>x.name===r.name)) arr.push(r); }
+  renderFiles(); updateRun();
+  if(errors.length) toast(`${errors.length} súbor(ov) sa nepodarilo načítať`);
+}
+
+/* ---------- run ---------- */
+$("#run").onclick = async ()=>{
+  const prog=$("#prog"), bar=$("#prog-bar"), st=$("#status");
+  $("#run").disabled=true; prog.classList.add("show"); bar.style.width="2%";
+  state.invoices=[]; state.payments=[];
+  const failed=[];
+  const total = state.faktFiles.length + state.vypFiles.length; let done=0;
+  const tick=lbl=>{ done++; bar.style.width = Math.round(4+done/total*92)+"%"; st.textContent=lbl; };
+
+  try{
+    for(const f of state.faktFiles){
+      try{ const pages=await pdfRows(f.buf.slice(0)); state.invoices.push(parseInvoice(pages[0], f.name)); }
+      catch(e){ failed.push(f.name); }
+      tick(`Čítam faktúry… (${done}/${total})`);
+    }
+    for(const f of state.vypFiles){
+      try{ const pages=await pdfRows(f.buf.slice(0)); state.payments.push(...parseStatement(pages, f.name)); }
+      catch(e){ failed.push(f.name); }
+      tick(`Čítam výpisy… (${done}/${total})`);
+    }
+    bar.style.width="100%";
+    reconcile();
+    render();
+    $("#results").classList.add("show");
+    st.textContent = failed.length ? `Hotovo · ${failed.length} súbor(ov) sa nepodarilo prečítať` : "Hotovo";
+    setTimeout(()=>{ prog.classList.remove("show"); bar.style.width="0%"; }, 600);
+    $("#results").scrollIntoView({behavior:"smooth", block:"start"});
+  }catch(e){
+    st.textContent="Nastala chyba pri spracovaní."; console.error(e);
+  }
+  $("#run").disabled=false;
+};
+
+/* ---------- reconcile ---------- */
+function reconcile(){
+  const incoming = state.payments.filter(p=>p.amount>0);
+  incoming.forEach(p=>{ p.matched=false; p.matchedBy=null; });
+
+  // statement coverage window
+  let minD=null,maxD=null;
+  for(const p of incoming){ if(p.dateObj){ if(!minD||p.dateObj<minD)minD=p.dateObj; if(!maxD||p.dateObj>maxD)maxD=p.dateObj; } }
+
+  const results = state.invoices.map(inv=>({...inv, pays:[], paid:0, status:"unpaid", matchedBy:null, candidates:0}));
+
+  // PASS 1 — variabilný symbol (spoľahlivé)
+  const byVs={};
+  for(const p of incoming){ if(p.vs)(byVs[p.vs]=byVs[p.vs]||[]).push(p); }
+  for(const res of results){
+    if(!res.vs) continue;
+    const pays = byVs[res.vs];
+    if(pays && pays.length){
+      pays.forEach(p=>{ p.matched=true; p.matchedBy="vs"; });
+      res.pays = pays.slice();
+      res.matchedBy = "vs";
+    }
+  }
+
+  // PASS 2 — podľa sumy (len pre faktúry bez VS zhody, len voľné platby; platba nesmie byť pred vystavením)
+  if(state.amountMatch){
+    const pending = results.filter(r=>r.pays.length===0 && r.total);
+    pending.sort((a,b)=>{ const da=parseDate(a.issue||a.due), db=parseDate(b.issue||b.due);
+      return (da?da.getTime():0)-(db?db.getTime():0); });
+    for(const res of pending){
+      const issue = parseDate(res.issue);
+      const cands = incoming.filter(p=> !p.matched
+        && Math.abs(p.amount - res.total) < 0.02
+        && (!issue || (p.dateObj && p.dateObj >= issue)));
+      res.candidates = cands.length;
+      if(!cands.length) continue;
+      cands.sort((a,b)=> (a.dateObj?a.dateObj.getTime():0)-(b.dateObj?b.dateObj.getTime():0));
+      const pick = cands[0];
+      pick.matched=true; pick.matchedBy="amount";
+      res.pays=[pick]; res.matchedBy="amount";
+    }
+  }
+
+  // finalize
+  for(const res of results){
+    const paid = res.pays.reduce((s,p)=>s+p.amount,0);
+    res.paid = paid;
+    const tot = res.total||0;
+    if(!res.pays.length) res.status="unpaid";
+    else if(Math.abs(paid-tot)<0.02) res.status="paid";
+    else if(paid<tot) res.status="partial";
+    else res.status="overpaid";
+    const due=parseDate(res.due);
+    res.outside = res.status==="unpaid" && due && minD && maxD && (due<minD || due>maxD);
+    res.owed = (res.status==="unpaid"||res.status==="partial") ? Math.max(tot-paid,0) : 0;
+    res.lastPayDate = res.pays.length ? res.pays.map(p=>p.date).slice(-1)[0] : null;
+  }
+
+  state.results=results;
+  state.coverage={minD,maxD};
+}
+
+/* ---------- render ---------- */
+function render(){
+  const r=state.results;
+  const unpaid=r.filter(x=>x.status==="unpaid");
+  const partial=r.filter(x=>x.status==="partial");
+  const paid=r.filter(x=>x.status==="paid"||x.status==="overpaid");
+  const incoming=state.payments.filter(p=>p.amount>0);
+  const owed = unpaid.reduce((s,x)=>s+(x.total||0),0) + partial.reduce((s,x)=>s+x.owed,0);
+  const debtors = new Set([...unpaid,...partial].map(x=>x.customer)).size;
+  const recv = incoming.reduce((s,p)=>s+p.amount,0);
+
+  $("#s-owed").innerHTML = owed.toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2})+' <small>€</small>';
+  $("#s-owed-sub").textContent = `${unpaid.length+partial.length} ${plur(unpaid.length+partial.length,"neuhradená faktúra","neuhradené faktúry","neuhradených faktúr")}`;
+  $("#s-debtors").textContent = debtors;
+  $("#s-debtors-sub").textContent = plur(debtors,"odberateľ","odberatelia","odberateľov");
+  $("#s-paid").textContent = paid.length;
+  const amtCount = paid.filter(x=>x.matchedBy==="amount").length;
+  $("#s-paid-sub").textContent = `z ${r.length} ${plur(r.length,"faktúry","faktúr","faktúr")} spolu` + (amtCount?` · ${amtCount} podľa sumy`:"");
+  $("#s-payments").textContent = incoming.length;
+  $("#s-payments-sub").textContent = "prijatých · "+fmtEur(recv);
+
+  // reco bar by amount
+  const aPaid=paid.reduce((s,x)=>s+(x.total||0),0), aPart=partial.reduce((s,x)=>s+(x.total||0),0), aUn=unpaid.reduce((s,x)=>s+(x.total||0),0);
+  const sum=aPaid+aPart+aUn||1;
+  const bar=$("#recobar").children;
+  bar[0].style.width=(aPaid/sum*100)+"%"; bar[1].style.width=(aPart/sum*100)+"%"; bar[2].style.width=(aUn/sum*100)+"%";
+
+  $("#b-unpaid").textContent=unpaid.length; $("#b-partial").textContent=partial.length;
+  $("#b-paid").textContent=paid.length; $("#b-all").textContent=r.length; $("#b-pay").textContent=incoming.length;
+
+  // footnote about coverage + matching method
+  const c=state.coverage;
+  const fdate=d=>d.toLocaleDateString("sk-SK");
+  let foot = c.minD&&c.maxD
+    ? `Nahrané výpisy pokrývajú obdobie ${fdate(c.minD)} – ${fdate(c.maxD)}. Faktúry so splatnosťou mimo tohto obdobia sú označené ⚠ – platba mohla prebehnúť vo výpise, ktorý nie je nahraný. `
+    : "";
+  foot += state.amountMatch
+    ? `Páruje sa najprv podľa variabilného symbolu; ak faktúra nemá zhodnú platbu, skúsi sa voľná platba rovnakej sumy (po dátume vystavenia) – tieto sú označené „≈ podľa sumy“ a odporúčame ich overiť.`
+    : `Páruje sa iba podľa variabilného symbolu (párovanie podľa sumy je vypnuté).`;
+  if(amtCount) foot += ` Teraz je takto spárovaných ${amtCount} ${plur(amtCount,"faktúra","faktúry","faktúr")}.`;
+  $("#foot").textContent = foot;
+}
+
+const COLS = {
+  invoices:[
+    {key:"number",label:"Faktúra"},{key:"customer",label:"Odberateľ"},
+    {key:"total",label:"Suma",num:true},{key:"due",label:"Splatnosť"},
+    {key:"status",label:"Stav"},{key:"paid",label:"Zaplatené",num:true},
+    {key:"lastPayDate",label:"Dátum platby"},{key:"vs",label:"VS"}
+  ],
+  payments:[
+    {key:"date",label:"Dátum"},{key:"name",label:"Platiteľ"},
+    {key:"amount",label:"Suma",num:true},{key:"vs",label:"VS"},
+    {key:"matched",label:"Priradené k faktúre"}
+  ]
+};
+function currentRows(){
+  let rows; const r=state.results;
+  if(state.tab==="payments"){ rows=state.payments.filter(p=>p.amount>0).slice(); }
+  else if(state.tab==="unpaid") rows=r.filter(x=>x.status==="unpaid");
+  else if(state.tab==="partial") rows=r.filter(x=>x.status==="partial");
+  else if(state.tab==="paid") rows=r.filter(x=>x.status==="paid"||x.status==="overpaid");
+  else rows=r.slice();
+  const q=state.search.trim().toLowerCase();
+  if(q){
+    rows=rows.filter(x=>{
+      const hay = state.tab==="payments" ? `${x.name} ${x.vs}` : `${x.customer} ${x.number} ${x.vs}`;
+      return hay.toLowerCase().includes(q);
+    });
+  }
+  // sort
+  const sk=state.sort.key, dir=state.sort.dir;
+  const DATEKEYS={date:1,due:1,lastPayDate:1,issue:1};
+  rows.sort((a,b)=>{
+    let av=a[sk], bv=b[sk];
+    if(sk==="owed"){ av=a.status==="unpaid"?(a.total||0):a.owed||0; bv=b.status==="unpaid"?(b.total||0):b.owed||0; }
+    else if(DATEKEYS[sk]){ const da=parseDate(av), db=parseDate(bv); av=da?da.getTime():-Infinity; bv=db?db.getTime():-Infinity; }
+    if(typeof av==="string") av=av.toLowerCase(); if(typeof bv==="string") bv=bv.toLowerCase();
+    if(av==null)av=-Infinity; if(bv==null)bv=-Infinity;
+    return av<bv?-1*dir:av>bv?1*dir:0;
+  });
+  return rows;
+}
+function statusChip(s){
+  if(s==="paid"||s==="overpaid") return `<span class="chip paid"><i></i>${s==="overpaid"?"Preplatok":"Zaplatené"}</span>`;
+  if(s==="partial") return `<span class="chip part"><i></i>Čiastočne</span>`;
+  return `<span class="chip unpaid"><i></i>Nezaplatené</span>`;
+}
+function renderTable(){
+  const isPay = state.tab==="payments";
+  const cols = isPay?COLS.payments:COLS.invoices;
+  const thead=$("#thead"), tbody=$("#tbody");
+  thead.innerHTML = "<tr>"+cols.map(c=>{
+    const active = (c.key===state.sort.key) || (c.key==="total"&&state.sort.key==="owed");
+    const ar = active ? (state.sort.dir<0?"▼":"▲") : "";
+    return `<th class="${c.num?'num':''}" data-key="${c.key}">${c.label} <span class="arrow">${ar}</span></th>`;
+  }).join("")+"</tr>";
+  thead.querySelectorAll("th").forEach(th=>th.onclick=()=>{
+    let k=th.dataset.key; if(state.tab!=="payments" && k==="total") k="owed";
+    if(state.sort.key===k) state.sort.dir*=-1; else { state.sort.key=k; state.sort.dir=(k==="customer"||k==="name")?1:-1; }
+    renderTable();
+  });
+
+  const rows=currentRows();
+  if(!rows.length){
+    const msg = state.tab==="unpaid" ? "Žiadni neplatiči — všetky spárované faktúry sú uhradené."
+      : state.tab==="payments" ? "Žiadne prijaté platby." : "Žiadne položky v tejto kategórii.";
+    tbody.innerHTML = `<tr><td colspan="${cols.length}"><div class="empty"><div class="big">${msg}</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(x=>{
+    if(isPay){
+      let mcell;
+      if(x.matchedBy==="vs") mcell='<span class="chip paid"><i></i>Áno · VS</span>';
+      else if(x.matchedBy==="amount") mcell='<span class="chip part"><i></i>Áno · suma</span>';
+      else mcell='<span class="chip" style="background:var(--surface-2);color:var(--ink-faint)"><i style="background:var(--ink-faint)"></i>Nie</span>';
+      return `<tr>
+        <td class="tnum">${x.date}</td>
+        <td class="cust">${esc(x.name)}</td>
+        <td class="num amt">${fmtEur(x.amount)}</td>
+        <td><span class="vs">${x.vs||"—"}</span></td>
+        <td>${mcell}</td>
+      </tr>`;
+    }
+    const warn = x.outside ? `<span class="warn" title="Splatnosť mimo obdobia nahraných výpisov – platba mohla prebehnúť inde.">!</span>` : "";
+    const approx = (x.matchedBy==="amount") ? `<span class="approx" title="Spárované podľa sumy, faktúra nemala platbu s rovnakým variabilným symbolom. Odporúčame overiť.">≈ podľa sumy</span>` : "";
+    return `<tr>
+      <td><span class="fid">${esc(x.number||"—")}</span></td>
+      <td class="cust">${esc(x.customer)}${warn}</td>
+      <td class="num amt">${fmtEur(x.total)}</td>
+      <td class="tnum">${x.due||"—"}</td>
+      <td>${statusChip(x.status)}${approx}</td>
+      <td class="num ${x.paid>0?'':'muted'}">${x.paid>0?fmtEur(x.paid):"—"}</td>
+      <td class="tnum muted">${x.lastPayDate||"—"}</td>
+      <td><span class="vs">${x.vs||"—"}</span></td>
+    </tr>`;
+  }).join("");
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ---------- tabs / search / export ---------- */
+$("#tabs").onclick = e=>{
+  const t=e.target.closest(".tab"); if(!t) return;
+  $("#tabs").querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active"); state.tab=t.dataset.tab;
+  state.sort = state.tab==="payments" ? {key:"date",dir:-1}
+             : state.tab==="unpaid"   ? {key:"owed",dir:-1}
+             : {key:"total",dir:-1};
+  renderTable();
+};
+$("#search").oninput = e=>{ state.search=e.target.value; renderTable(); };
+$("#amt-toggle").onchange = e=>{ state.amountMatch=e.target.checked; reconcile(); render(); };
+
+$("#csv").onclick = ()=>{
+  const isPay=state.tab==="payments";
+  const rows=currentRows();
+  let head, lines;
+  if(isPay){
+    head=["Dátum","Platiteľ","Suma EUR","VS","Priradené"];
+    const mlbl={vs:"áno (VS)",amount:"áno (suma)"};
+    lines=rows.map(x=>[x.date,x.name,money(x.amount),x.vs,mlbl[x.matchedBy]||"nie"]);
+  }else{
+    head=["Faktúra","Odberateľ","Suma EUR","Splatnosť","Stav","Zaplatené EUR","Dátum platby","VS","Spárované podľa"];
+    const lbl={paid:"Zaplatené",overpaid:"Preplatok",partial:"Čiastočne",unpaid:"Nezaplatené"};
+    const mlbl={vs:"VS",amount:"suma (overiť)"};
+    lines=rows.map(x=>[x.number,x.customer,money(x.total),x.due||"",lbl[x.status],x.paid?money(x.paid):"",x.lastPayDate||"",x.vs,mlbl[x.matchedBy]||""]);
+  }
+  const csv="\uFEFF"+[head,...lines].map(r=>r.map(csvCell).join(";")).join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=(state.tab==="payments"?"platby":state.tab==="unpaid"?"neplatici":"faktury")+"_"+new Date().toISOString().slice(0,10)+".csv";
+  a.click(); URL.revokeObjectURL(a.href); toast("CSV exportované");
+};
+function money(n){ return n==null?"":n.toFixed(2).replace(".",","); }
+function csvCell(v){ v=String(v??""); return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+
+$("#copy").onclick = ()=>{
+  const rows=currentRows();
+  let txt;
+  if(state.tab==="payments") txt=rows.map(x=>`${x.date}\t${x.name}\t${fmtEur(x.amount)}\tVS ${x.vs||"—"}`).join("\n");
+  else txt=rows.map(x=>`${x.customer} — ${fmtEur(x.total)} (faktúra ${x.number||"?"}, VS ${x.vs||"—"}, splatnosť ${x.due||"?"})`).join("\n");
+  navigator.clipboard.writeText(txt).then(()=>toast(`Skopírované (${rows.length} ${plur(rows.length,"riadok","riadky","riadkov")})`)).catch(()=>toast("Kopírovanie zlyhalo"));
+};
+
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2200); }
+
+$("#reset").onclick = ()=>{
+  state.faktFiles=[]; state.vypFiles=[]; state.invoices=[]; state.payments=[]; state.results=[];
+  renderFiles(); updateRun(); $("#results").classList.remove("show"); $("#status").textContent="";
+};
+
+/* ---------- init ---------- */
+wireZone("#zone-fakt","#in-fakt","fakt");
+wireZone("#zone-vyp","#in-vyp","vyp");
+renderFiles(); updateRun();
+if(!window.pdfjsLib || !window.JSZip){
+  $("#status").textContent="Knižnice na čítanie PDF/ZIP sa nenačítali – skontrolujte pripojenie na internet.";
+}
+</script>
+</body>
+</html>
