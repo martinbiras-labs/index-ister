@@ -27,28 +27,17 @@
     -webkit-font-smoothing:antialiased; line-height:1.45; font-size:15px;
   }
   .tnum{font-variant-numeric:tabular-nums}
-  .wrap{max-width:1180px; margin:0 auto; padding:28px 22px 80px}
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 22px 80px; position:relative}
 
   /* Header */
-  header.app{display:flex; align-items:baseline; gap:14px; margin-bottom:24px; flex-wrap:wrap}
+  header.app{display:flex; align-items:baseline; gap:14px; margin-bottom:24px; flex-wrap:wrap; padding-right:120px}
   .brand{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap}
   .brand h1{font-size:23px; font-weight:680; letter-spacing:-.02em; margin:0; white-space:nowrap}
   .brand p{margin:0; color:var(--ink-soft); font-size:14px}
   .brand .tag{display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600;
     color:var(--primary-700); background:var(--primary-50); padding:5px 10px; border-radius:999px; margin-bottom:12px}
   .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
-  .ver{flex-shrink:0; font-size:12px; color:var(--ink-faint); background:var(--surface); border:1px solid var(--line);
-    padding:6px 12px; border-radius:999px; font-variant-numeric:tabular-nums; white-space:nowrap}
-
-  /* ISTER brand bar */
-  .brandbar{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
-    background:linear-gradient(135deg,#1c2636 0%,#10141c 100%); border:1px solid #0b0e14;
-    border-radius:14px; padding:15px 20px; margin-bottom:22px; box-shadow:var(--shadow)}
-  .brandlock{display:flex; flex-direction:column}
-  .brandlock .wordmark{width:168px; height:auto; display:block}
-  .brandlock .tower{display:flex; justify-content:space-between; width:168px; margin-top:5px; padding:0 2px}
-  .brandlock .tower span{font-size:9px; font-weight:600; letter-spacing:.02em; color:rgba(233,238,247,.5)}
-  .verpill{font-size:12px; color:#9aa6bc; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.11);
+  .ver{position:absolute; top:28px; right:22px; z-index:2; font-size:12px; color:var(--ink-faint); background:var(--surface); border:1px solid var(--line);
     padding:6px 12px; border-radius:999px; font-variant-numeric:tabular-nums; white-space:nowrap}
 
   /* privacy footer */
@@ -177,6 +166,8 @@
     .summary{grid-template-columns:1fr 1fr}
     .stat.hero{grid-column:1/-1}
     .search input{width:140px}
+    header.app{padding-right:0}
+    .ver{position:static; margin-top:10px}
   }
   @media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
 </style>
@@ -184,19 +175,12 @@
 <body>
 <div class="wrap">
 
-  <div class="brandbar">
-    <div class="brandlock">
-      <img class="wordmark" src="data:image/png;base64,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" alt="ISTER">
-      <div class="tower"><span>T</span><span>O</span><span>W</span><span>E</span><span>R</span></div>
-    </div>
-    <div class="verpill" id="ver">verzia 1.6 · 30. 6. 2026</div>
-  </div>
-
   <header class="app">
     <div class="brand">
       <h1>Párovanie faktúr a platieb</h1>
       <p>Nahrajte vystavené faktúry a výpisy z účtu. Nástroj ich spáruje a vypíše, kto ešte nezaplatil.</p>
     </div>
+    <div class="ver" id="ver">verzia 1.7 · 30. 6. 2026</div>
   </header>
 
   <section class="uploads">
