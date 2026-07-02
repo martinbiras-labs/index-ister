@@ -201,7 +201,7 @@
       <h1>Párovanie faktúr a platieb</h1>
       <p>Nahrajte vystavené faktúry a výpisy z účtu. Nástroj ich spáruje a vypíše, kto pravdepodobne ešte nezaplatil.</p>
     </div>
-    <div class="ver" id="ver">verzia 3.3</div>
+    <div class="ver" id="ver">verzia 3.4</div>
   </header>
 
   <section class="uploads">
@@ -289,7 +289,7 @@
         <input type="checkbox" id="amt-toggle" checked> Párovať aj podľa sumy
       </label>
       <button class="btn btn-ghost" id="copy">Kopírovať</button>
-      <button class="btn btn-ghost" id="csv">Export XLS</button>
+      <button class="btn btn-ghost" id="csv">Export XLSX</button>
     </div>
 
     <div class="searchrow">
@@ -855,46 +855,65 @@ $("#tbody").addEventListener("click", e=>{
 $("#amt-toggle").onchange = e=>{ state.amountMatch=e.target.checked; reconcile(); render(); };
 
 $("#csv").onclick = async ()=>{
-  const isPay=state.tab==="payments";
-  const rows=currentRows();
-  let cols, dataRows;
-  if(isPay){
-    cols=[{t:"Dátum",w:13},{t:"Platiteľ",w:34},{t:"Suma (€)",w:14},{t:"VS",w:15},{t:"Priradené",w:18}];
-    dataRows=rows.map(x=>{
+  const defs=[
+    {tab:"unpaid",  name:"Neplatiči"},
+    {tab:"partial", name:"Čiastočne"},
+    {tab:"paid",    name:"Zaplatené"},
+    {tab:"all",     name:"Všetky faktúry"},
+    {tab:"payments",name:"Prijaté platby"},
+  ];
+  const sheets=defs.map(d=>{ const c=tabCells(d.tab, rowsForTab(d.tab)); return {name:d.name, cols:c.cols, dataRows:c.dataRows}; });
+  try{
+    const blob=await buildXlsx(sheets);
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="prehlad_faktur_"+new Date().toISOString().slice(0,10)+".xlsx"; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast("Excel exportovaný (5 hárkov)");
+  }catch(e){ console.error(e); toast("Export zlyhal"); }
+};
+
+// riadky pre danú kartu (celý rozsah, bez vyhľadávania), s rozumným predvoleným zoradením
+function rowsForTab(tab){
+  const r=state.results; let rows;
+  if(tab==="payments") rows=state.payments.filter(p=>p.amount>0).slice();
+  else if(tab==="unpaid") rows=r.filter(x=>x.status==="unpaid");
+  else if(tab==="partial") rows=r.filter(x=>x.status==="partial");
+  else if(tab==="paid") rows=r.filter(x=>x.status==="paid"||x.status==="overpaid");
+  else rows=r.slice();
+  if(tab==="payments") rows.sort((a,b)=>(b.dateObj?b.dateObj.getTime():0)-(a.dateObj?a.dateObj.getTime():0));
+  else rows.sort((a,b)=>(b.total||0)-(a.total||0));
+  return rows;
+}
+// prevod riadkov karty na stĺpce + bunky pre Excel
+function tabCells(tab, rows){
+  if(tab==="payments"){
+    const cols=[{t:"Dátum",w:13},{t:"Platiteľ",w:34},{t:"Suma (€)",w:14},{t:"VS",w:15},{t:"Priradené",w:18}];
+    const dataRows=rows.map(x=>{
       let pr = x.matchedBy==="vs" ? {v:"Áno · VS",k:"st-paid"}
              : x.matchedBy==="amount" ? {v:"Áno · suma",k:"st-partial"}
              : {v:"Nie",k:"muted"};
       return [{v:x.date,k:"center"},{v:x.name,k:"text"},{v:x.amount,k:"money"},{v:x.vs||"",k:"center"},pr];
     });
-  }else{
-    cols=[{t:"Faktúra",w:14},{t:"Odberateľ",w:34},{t:"Suma (€)",w:14},{t:"Splatnosť",w:12},
-          {t:"Stav",w:15},{t:"Zaplatené (€)",w:14},{t:"Dátum platby",w:13},{t:"VS",w:14},{t:"Spárované podľa",w:16}];
-    const lbl={paid:"Zaplatené",overpaid:"Preplatok",partial:"Čiastočne",unpaid:"Nezaplatené"};
-    const stK={paid:"st-paid",overpaid:"st-paid",partial:"st-partial",unpaid:"st-unpaid"};
-    const mlbl={vs:"VS",amount:"suma (overiť)"};
-    dataRows=rows.map(x=>[
-      {v:x.number||"",k:"center"},{v:x.customer,k:"text"},{v:x.total,k:"money"},{v:x.due||"",k:"center"},
-      {v:lbl[x.status]||"",k:stK[x.status]||"center"},
-      (x.paid>0?{v:x.paid,k:"money"}:{v:"",k:"center"}),
-      {v:x.lastPayDate||"—",k:"muted"},{v:x.vs||"",k:"center"},{v:mlbl[x.matchedBy]||"",k:"center"}
-    ]);
+    return {cols, dataRows};
   }
-  const base={payments:"platby",unpaid:"neplatici",paid:"zaplatene",partial:"ciastocne",all:"faktury"}[state.tab]||"faktury";
-  const sheet={payments:"Prijaté platby",unpaid:"Neplatiči",paid:"Zaplatené",partial:"Čiastočne",all:"Všetky faktúry"}[state.tab]||"Faktúry";
-  try{
-    const blob=await buildXlsx(sheet, cols, dataRows);
-    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-    a.download=base+"_"+new Date().toISOString().slice(0,10)+".xlsx"; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast("Excel exportovaný");
-  }catch(e){ console.error(e); toast("Export zlyhal"); }
-};
+  const cols=[{t:"Faktúra",w:14},{t:"Odberateľ",w:34},{t:"Suma (€)",w:14},{t:"Splatnosť",w:12},
+        {t:"Stav",w:15},{t:"Zaplatené (€)",w:14},{t:"Dátum platby",w:13},{t:"VS",w:14},{t:"Spárované podľa",w:16}];
+  const lbl={paid:"Zaplatené",overpaid:"Preplatok",partial:"Čiastočne",unpaid:"Nezaplatené"};
+  const stK={paid:"st-paid",overpaid:"st-paid",partial:"st-partial",unpaid:"st-unpaid"};
+  const mlbl={vs:"VS",amount:"suma (overiť)"};
+  const dataRows=rows.map(x=>[
+    {v:x.number||"",k:"center"},{v:x.customer,k:"text"},{v:x.total,k:"money"},{v:x.due||"",k:"center"},
+    {v:lbl[x.status]||"",k:stK[x.status]||"center"},
+    (x.paid>0?{v:x.paid,k:"money"}:{v:"",k:"center"}),
+    {v:x.lastPayDate||"—",k:"muted"},{v:x.vs||"",k:"center"},{v:mlbl[x.matchedBy]||"",k:"center"}
+  ]);
+  return {cols, dataRows};
+}
 
 function xmlEsc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c])); }
 function colName(i){ let s=""; i++; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=(i-(m+1))/26|0; } return s; }
 
-async function buildXlsx(sheetName, cols, dataRows){
+async function buildXlsx(sheets){
   const STY={header:1,text:2,money:3,center:4,"st-unpaid":5,"st-paid":6,"st-partial":7,muted:8};
-  const nCols=cols.length, lastRow=dataRows.length+1, ref="A1:"+colName(nCols-1)+lastRow;
   const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
     '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00\\ &quot;€&quot;"/></numFmts>'+
@@ -933,52 +952,63 @@ async function buildXlsx(sheetName, cols, dataRows){
     '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'+
     '</styleSheet>';
 
-  let colsXml="<cols>";
-  cols.forEach((c,i)=> colsXml+=`<col min="${i+1}" max="${i+1}" width="${c.w}" customWidth="1"/>`);
-  colsXml+="</cols>";
-
-  function cellXml(rowNo, ci, cell){
-    const cref=colName(ci)+rowNo, s=STY[cell.k]||2;
-    if(cell.k==="money"){
-      if(cell.v==null||cell.v==="") return `<c r="${cref}" s="4"/>`;
-      return `<c r="${cref}" s="${s}"><v>${cell.v}</v></c>`;
+  function buildSheet(cols, dataRows){
+    const nCols=cols.length, lastRow=dataRows.length+1, ref="A1:"+colName(nCols-1)+lastRow;
+    let colsXml="<cols>";
+    cols.forEach((c,i)=> colsXml+=`<col min="${i+1}" max="${i+1}" width="${c.w}" customWidth="1"/>`);
+    colsXml+="</cols>";
+    function cellXml(rowNo, ci, cell){
+      const cref=colName(ci)+rowNo, s=STY[cell.k]||2;
+      if(cell.k==="money"){
+        if(cell.v==null||cell.v==="") return `<c r="${cref}" s="4"/>`;
+        return `<c r="${cref}" s="${s}"><v>${cell.v}</v></c>`;
+      }
+      const v=(cell.v==null?"":String(cell.v));
+      if(v==="") return `<c r="${cref}" s="${s}"/>`;
+      return `<c r="${cref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
     }
-    const v=(cell.v==null?"":String(cell.v));
-    if(v==="") return `<c r="${cref}" s="${s}"/>`;
-    return `<c r="${cref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
-  }
-  let sd='<sheetData><row r="1" ht="24" customHeight="1">';
-  cols.forEach((c,i)=> sd+=cellXml(1,i,{v:c.t,k:"header"}));
-  sd+="</row>";
-  dataRows.forEach((row,ri)=>{
-    const r=ri+2; sd+=`<row r="${r}" ht="20" customHeight="1">`;
-    row.forEach((cell,ci)=> sd+=cellXml(r,ci,cell));
+    let sd='<sheetData><row r="1" ht="24" customHeight="1">';
+    cols.forEach((c,i)=> sd+=cellXml(1,i,{v:c.t,k:"header"}));
     sd+="</row>";
-  });
-  sd+="</sheetData>";
-
-  const sheetXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
-    `<dimension ref="${ref}"/>`+
-    '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView></sheetViews>'+
-    '<sheetFormatPr defaultRowHeight="18"/>'+
-    colsXml + sd +
-    `<autoFilter ref="${ref}"/>`+
-    '</worksheet>';
-
-  const ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
-  const relsRoot='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
-  const workbook='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="'+xmlEsc(sheetName).slice(0,31)+'" sheetId="1" r:id="rId1"/></sheets></workbook>';
-  const wbRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+    dataRows.forEach((row,ri)=>{
+      const r=ri+2; sd+=`<row r="${r}" ht="20" customHeight="1">`;
+      row.forEach((cell,ci)=> sd+=cellXml(r,ci,cell));
+      sd+="</row>";
+    });
+    sd+="</sheetData>";
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+      `<dimension ref="${ref}"/>`+
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView></sheetViews>'+
+      '<sheetFormatPr defaultRowHeight="18"/>'+
+      colsXml + sd +
+      `<autoFilter ref="${ref}"/>`+
+      '</worksheet>';
+  }
 
   const zip=new JSZip();
+  const xl=zip.folder("xl");
+  const wsFolder=xl.folder("worksheets");
+  let sheetsXml="", wbRelsXml="", ctOverrides="";
+  sheets.forEach((sh,i)=>{
+    const n=i+1;
+    wsFolder.file("sheet"+n+".xml", buildSheet(sh.cols, sh.dataRows));
+    sheetsXml  += '<sheet name="'+xmlEsc(sh.name).slice(0,31)+'" sheetId="'+n+'" r:id="rId'+n+'"/>';
+    wbRelsXml  += '<Relationship Id="rId'+n+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+n+'.xml"/>';
+    ctOverrides+= '<Override PartName="/xl/worksheets/sheet'+n+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+  });
+  const stylesRid="rId"+(sheets.length+1);
+
+  const ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+ctOverrides+'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
+  const relsRoot='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+  const workbook='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+sheetsXml+'</sheets></workbook>';
+  const wbRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+wbRelsXml+'<Relationship Id="'+stylesRid+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+
   zip.file("[Content_Types].xml", ct);
   zip.folder("_rels").file(".rels", relsRoot);
-  const xl=zip.folder("xl");
   xl.file("workbook.xml", workbook);
   xl.folder("_rels").file("workbook.xml.rels", wbRels);
   xl.file("styles.xml", styles);
-  xl.folder("worksheets").file("sheet1.xml", sheetXml);
   return await zip.generateAsync({type:"blob", mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
 }
 
