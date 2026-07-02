@@ -40,6 +40,18 @@
   .ver{position:absolute; top:28px; right:22px; z-index:2; font-size:12px; color:var(--ink-faint); background:var(--surface); border:1px solid var(--line);
     padding:6px 12px; border-radius:999px; font-variant-numeric:tabular-nums; white-space:nowrap}
 
+  .tabtotal{margin:0 2px 13px; display:flex; align-items:baseline; flex-wrap:wrap; gap:9px; font-size:13px; color:var(--ink-faint)}
+  .tabtotal .lbl{font-weight:640; color:var(--ink-soft)}
+  .tabtotal .sep{color:var(--line-strong)}
+  .tabtotal .sum{margin-left:8px; white-space:nowrap; font-size:18px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .tabtotal .sum .sig{font-size:15px; font-weight:600; color:var(--ink-faint); margin-right:4px}
+  .tabtotal .sum .cur{font-size:13px; font-weight:600; color:var(--ink-faint); margin-left:2px}
+
+  .notice{margin:2px 0 16px; font-size:12.5px; color:var(--ink-soft); background:var(--partial-bg);
+    border:1px solid #F0DFBE; border-radius:10px; padding:10px 14px; display:flex; gap:9px; align-items:flex-start}
+  .notice svg{flex-shrink:0; margin-top:1px; color:var(--partial)}
+  .notice b{color:var(--partial); font-weight:680}
+
   /* privacy footer */
   .privacy{display:flex; align-items:flex-start; gap:8px; margin:36px 2px 0;
     font-size:10px; color:var(--ink-faint); line-height:1.6}
@@ -109,16 +121,20 @@
   .legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
 
   /* Toolbar */
-  .toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  .toolbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px}
+  .toolbar .btn{padding:8px 12px; font-size:13px}
   .tabs{display:flex; gap:4px; background:var(--surface); border:1px solid var(--line); padding:4px; border-radius:11px; flex-wrap:wrap}
-  .tab{border:none; background:none; font-family:inherit; font-size:13.5px; font-weight:560; color:var(--ink-soft);
-    padding:7px 13px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:7px}
+  .tab{border:none; background:none; font-family:inherit; font-size:13px; font-weight:560; color:var(--ink-soft);
+    padding:6px 10px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px}
   .tab:hover{color:var(--ink)}
   .tab.active{background:var(--ink); color:#fff}
   .tab .badge{font-size:11.5px; font-weight:700; background:rgba(0,0,0,.07); color:inherit; padding:1px 7px; border-radius:999px; font-variant-numeric:tabular-nums}
   .tab.active .badge{background:rgba(255,255,255,.2)}
   .spacer{flex:1}
   .search{position:relative}
+  .searchrow{margin:0 0 13px}
+  .searchrow .search{display:block; width:56%; min-width:320px}
+  .searchrow .search input{width:100%}
   .search input{font-family:inherit; font-size:13.5px; border:1px solid var(--line-strong); background:var(--surface);
     border-radius:9px; padding:8px 12px 8px 32px; width:210px; color:var(--ink)}
   .search input:focus{outline:none; border-color:var(--primary)}
@@ -129,12 +145,16 @@
   .scroll{overflow-x:auto}
   table{width:100%; border-collapse:collapse; font-size:14px}
   thead th{text-align:left; font-size:11.5px; font-weight:680; text-transform:uppercase; letter-spacing:.03em;
-    color:var(--ink-faint); padding:13px 16px; border-bottom:1px solid var(--line); white-space:nowrap; cursor:pointer; user-select:none}
+    color:var(--ink-faint); padding:13px 12px; border-bottom:1px solid var(--line); white-space:nowrap; cursor:pointer; user-select:none}
   thead th .arrow{opacity:.4; font-size:10px}
-  thead th.num, td.num{text-align:right; font-variant-numeric:tabular-nums}
-  tbody td{padding:13px 16px; border-bottom:1px solid var(--line); vertical-align:middle}
+  thead th.num, td.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+  tbody td{padding:13px 12px; border-bottom:1px solid var(--line); vertical-align:middle}
   tbody tr:last-child td{border-bottom:none}
   tbody tr:hover{background:var(--surface-2)}
+  tbody tr.clickable{cursor:pointer}
+  tbody tr.clickable:hover .fid{color:var(--primary); text-decoration:underline}
+  .openico{margin-left:7px; color:var(--ink-faint); font-size:11px; opacity:0; transition:opacity .12s}
+  tbody tr.clickable:hover .openico{opacity:1; color:var(--primary)}
   .cust{font-weight:560}
   .muted{color:var(--ink-faint)}
   .fid{font-family:var(--mono); font-size:12.5px; color:var(--ink-soft)}
@@ -149,10 +169,10 @@
     color:var(--partial);font-size:11px;font-weight:800;margin-left:7px;cursor:help; vertical-align:middle}
   .approx{display:inline-block;margin-left:7px;font-size:10.5px;font-weight:700;color:var(--partial);
     background:var(--partial-bg);padding:2px 8px;border-radius:999px;cursor:help;vertical-align:middle;white-space:nowrap}
-  .amtoggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft);cursor:pointer;
-    user-select:none;padding:7px 11px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);white-space:nowrap}
+  .amtoggle{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;
+    user-select:none;padding:7px 10px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);white-space:nowrap}
   .amtoggle:hover{color:var(--ink);border-color:var(--ink-soft)}
-  .amtoggle input{accent-color:var(--primary);width:15px;height:15px;cursor:pointer}
+  .amtoggle input{accent-color:var(--primary);width:14px;height:14px;cursor:pointer}
   .empty{padding:46px 20px; text-align:center; color:var(--ink-faint)}
   .empty .big{font-size:15px; color:var(--ink-soft); font-weight:560; margin-bottom:4px}
 
@@ -166,6 +186,7 @@
     .summary{grid-template-columns:1fr 1fr}
     .stat.hero{grid-column:1/-1}
     .search input{width:140px}
+    .searchrow .search{width:100%; min-width:0}
     header.app{padding-right:0}
     .ver{position:static; margin-top:10px}
   }
@@ -178,9 +199,9 @@
   <header class="app">
     <div class="brand">
       <h1>Párovanie faktúr a platieb</h1>
-      <p>Nahrajte vystavené faktúry a výpisy z účtu. Nástroj ich spáruje a vypíše, kto ešte nezaplatil.</p>
+      <p>Nahrajte vystavené faktúry a výpisy z účtu. Nástroj ich spáruje a vypíše, kto pravdepodobne ešte nezaplatil.</p>
     </div>
-    <div class="ver" id="ver">verzia 1.7 · 30. 6. 2026</div>
+    <div class="ver" id="ver">verzia 3.3</div>
   </header>
 
   <section class="uploads">
@@ -253,6 +274,8 @@
       <span><i style="background:var(--unpaid)"></i> Nezaplatené</span>
     </div>
 
+    <div class="notice" id="notice" style="display:none"></div>
+
     <div class="toolbar">
       <div class="tabs" id="tabs">
         <button class="tab active" data-tab="unpaid">Neplatiči <span class="badge" id="b-unpaid">0</span></button>
@@ -262,16 +285,21 @@
         <button class="tab" data-tab="payments">Prijaté platby <span class="badge" id="b-pay">0</span></button>
       </div>
       <div class="spacer"></div>
-      <label class="amtoggle" title="Ak faktúra nemá platbu s rovnakým variabilným symbolom, skúsi sa spárovať s voľnou platbou rovnakej sumy (po dátume vystavenia). Takéto páry sú označené „≈ podľa sumy“ – overte ich.">
+      <label class="amtoggle" title="Ak faktúra nemá platbu s rovnakým variabilným symbolom, skúsi sa spárovať s voľnou platbou rovnakej sumy (po dátume vystavenia). Takéto páry sú označené „≈ podľa sumy“ – overte ich. Najčastejšie ide o prípady, keď klient pri úhrade zabudol uviesť alebo nesprávne zadal variabilný symbol.">
         <input type="checkbox" id="amt-toggle" checked> Párovať aj podľa sumy
       </label>
+      <button class="btn btn-ghost" id="copy">Kopírovať</button>
+      <button class="btn btn-ghost" id="csv">Export XLS</button>
+    </div>
+
+    <div class="searchrow">
       <div class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input type="text" id="search" placeholder="Hľadať meno alebo VS…">
       </div>
-      <button class="btn btn-ghost" id="copy">Kopírovať</button>
-      <button class="btn btn-ghost" id="csv">Export CSV</button>
     </div>
+
+    <div class="tabtotal" id="tabtotal"></div>
 
     <div class="tablecard">
       <div class="scroll"><table id="table"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
@@ -427,6 +455,14 @@ function parseStatement(pages, fname){
 }
 
 /* ---------- zip / file intake ---------- */
+// lacný odtlačok obsahu súboru (dĺžka + vzorka bajtov) na odhalenie duplikátov aj pod iným názvom
+function fileFp(buf){
+  const b=new Uint8Array(buf), n=b.length;
+  let h=2166136261>>>0;
+  const step=Math.max(1, Math.floor(n/2048));
+  for(let i=0;i<n;i+=step){ h^=b[i]; h=Math.imul(h,16777619); }
+  return n+":"+((h>>>0).toString(36));
+}
 async function expandFiles(fileList){
   const result=[]; const errors=[];
   for(const f of fileList){
@@ -438,10 +474,10 @@ async function expandFiles(fileList){
         const entries = Object.values(zip.files).filter(e=>!e.dir && /\.pdf$/i.test(e.name) && !e.name.includes("__MACOSX") && !e.name.split("/").pop().startsWith("."));
         for(const e of entries){
           const pdfBuf = await e.async("arraybuffer");
-          result.push({name:e.name.split("/").pop(), buf:pdfBuf});
+          result.push({name:e.name.split("/").pop(), buf:pdfBuf, fp:fileFp(pdfBuf)});
         }
       } else if(lower.endsWith(".pdf")){
-        result.push({name:f.name, buf});
+        result.push({name:f.name, buf, fp:fileFp(buf)});
       } else { errors.push({name:f.name, msg:"nepodporovaný typ"}); }
     }catch(err){ errors.push({name:f.name, msg:"chyba čítania"}); }
   }
@@ -478,8 +514,15 @@ function wireZone(zoneSel, inputSel, target){
 async function intake(files, target){
   const {result, errors} = await expandFiles(files);
   const arr = target==="fakt" ? state.faktFiles : state.vypFiles;
-  for(const r of result){ if(!arr.some(x=>x.name===r.name)) arr.push(r); }
+  const seenNames=new Set(arr.map(x=>x.name));
+  const seenFp=new Set(arr.map(x=>x.fp));
+  let dup=0;
+  for(const r of result){
+    if(seenNames.has(r.name) || seenFp.has(r.fp)){ dup++; continue; }
+    seenNames.add(r.name); seenFp.add(r.fp); arr.push(r);
+  }
   renderFiles(); updateRun();
+  if(dup) toast(`Preskočených ${dup} ${plur(dup,"duplicitný súbor","duplicitné súbory","duplicitných súborov")}`);
   if(errors.length) toast(`${errors.length} súbor(ov) sa nepodarilo načítať`);
 }
 
@@ -488,13 +531,26 @@ $("#run").onclick = async ()=>{
   const prog=$("#prog"), bar=$("#prog-bar"), st=$("#status");
   $("#run").disabled=true; prog.classList.add("show"); bar.style.width="2%";
   state.invoices=[]; state.payments=[];
-  const failed=[];
+  const failed=[], unrecognized=[], dupInvoices=[];
+  const seenKey=new Set();
   const total = state.faktFiles.length + state.vypFiles.length; let done=0;
   const tick=lbl=>{ done++; bar.style.width = Math.round(4+done/total*92)+"%"; st.textContent=lbl; };
 
   try{
     for(const f of state.faktFiles){
-      try{ const pages=await pdfRows(f.buf.slice(0)); state.invoices.push(parseInvoice(pages[0], f.name)); }
+      try{
+        const pages=await pdfRows(f.buf.slice(0));
+        const inv=parseInvoice(pages[0], f.name);
+        inv._buf = f.buf;   // ponechaj referenciu na PDF, aby sa dalo otvoriť po kliknutí
+        const looksLikeInvoice = inv.total!=null && (inv.vs || inv.number);
+        if(!looksLikeInvoice){ unrecognized.push(f.name); }
+        else {
+          // duplikát = zhodné číslo, VS, dátum vystavenia aj suma
+          const key = [inv.number||"", inv.vs||"", inv.issue||"", inv.total!=null?inv.total.toFixed(2):""].join("|");
+          if(seenKey.has(key)) dupInvoices.push(f.name);
+          else { seenKey.add(key); state.invoices.push(inv); }
+        }
+      }
       catch(e){ failed.push(f.name); }
       tick(`Čítam faktúry… (${done}/${total})`);
     }
@@ -504,6 +560,7 @@ $("#run").onclick = async ()=>{
       tick(`Čítam výpisy… (${done}/${total})`);
     }
     bar.style.width="100%";
+    state.notices = {unrecognized, dupInvoices, failed};
     reconcile();
     // vždy zobraz záložku Neplatiči a vyčisti hľadanie
     state.tab="unpaid"; state.search=""; state.sort={key:"owed",dir:-1};
@@ -511,7 +568,10 @@ $("#run").onclick = async ()=>{
     $("#tabs").querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab==="unpaid"));
     render();
     $("#results").classList.add("show");
-    st.textContent = failed.length ? `Hotovo · ${failed.length} súbor(ov) sa nepodarilo prečítať` : "Hotovo";
+    const extra=[]; if(dupInvoices.length) extra.push(`${dupInvoices.length} duplicít`);
+    if(unrecognized.length) extra.push(`${unrecognized.length} nerozpoznaných`);
+    if(failed.length) extra.push(`${failed.length} nečitateľných`);
+    st.textContent = "Hotovo" + (extra.length ? " · "+extra.join(" · ") : "");
     setTimeout(()=>{ prog.classList.remove("show"); bar.style.width="0%"; }, 600);
     // posuň stránku dole na výsledky (uploady zídu z dohľadu)
     requestAnimationFrame(()=>{
@@ -572,7 +632,8 @@ function reconcile(){
     const paid = res.pays.reduce((s,p)=>s+p.amount,0);
     res.paid = paid;
     const tot = res.total||0;
-    if(!res.pays.length) res.status="unpaid";
+    if(res.total!=null && Math.abs(res.total) < 0.005) res.status="paid";  // nulová faktúra (0,00 €) = považovaná za uhradenú
+    else if(!res.pays.length) res.status="unpaid";
     else if(Math.abs(paid-tot)<0.02) res.status="paid";
     else if(paid<tot) res.status="partial";
     else res.status="overpaid";
@@ -626,7 +687,21 @@ function render(){
     ? `Páruje sa najprv podľa variabilného symbolu; ak faktúra nemá zhodnú platbu, skúsi sa voľná platba rovnakej sumy (po dátume vystavenia) – tieto sú označené „≈ podľa sumy“ a odporúčame ich overiť.`
     : `Páruje sa iba podľa variabilného symbolu (párovanie podľa sumy je vypnuté).`;
   if(amtCount) foot += ` Teraz je takto spárovaných ${amtCount} ${plur(amtCount,"faktúra","faktúry","faktúr")}.`;
+  foot += ` Kliknutím na riadok faktúry otvoríte jej PDF.`;
   $("#foot").textContent = foot;
+
+  // notice o duplicitách / nerozpoznaných / nečitateľných faktúrach
+  const nEl=$("#notice"); const nt=state.notices||{};
+  const parts=[];
+  const d=(nt.dupInvoices||[]).length;
+  if(d){ const w = d===1?"duplicitná faktúra bola preskočená":(d>=2&&d<=4)?"duplicitné faktúry boli preskočené":"duplicitných faktúr bolo preskočených";
+    parts.push(`<b>${d}</b> ${w} (rovnaké číslo, VS, dátum vystavenia aj suma)`); }
+  if((nt.unrecognized||[]).length) parts.push(`<b>${nt.unrecognized.length}</b> ${plur(nt.unrecognized.length,"súbor nevyzeral","súbory nevyzerali","súborov nevyzeralo")} ako faktúra a ${plur(nt.unrecognized.length,"bol vynechaný","boli vynechané","bolo vynechaných")}`);
+  if((nt.failed||[]).length) parts.push(`<b>${nt.failed.length}</b> ${plur(nt.failed.length,"súbor sa nepodarilo","súbory sa nepodarilo","súborov sa nepodarilo")} prečítať`);
+  if(parts.length){
+    nEl.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/></svg><span>${parts.join(" · ")}.</span>`;
+    nEl.style.display="flex";
+  } else nEl.style.display="none";
 
   renderTable();
 }
@@ -676,6 +751,14 @@ function statusChip(s){
   if(s==="partial") return `<span class="chip part"><i></i>Čiastočne</span>`;
   return `<span class="chip unpaid"><i></i>Nezaplatené</span>`;
 }
+// zladí šírku vyhľadávania so šírkou bloku kariet (pravé okraje lícujú)
+function syncSearchWidth(){
+  const tabs=$("#tabs"); const sb=document.querySelector(".searchrow .search");
+  if(!tabs || !sb) return;
+  if(window.innerWidth <= 760){ sb.style.width=""; return; }   // na mobile plná šírka (rieši CSS)
+  const w=tabs.getBoundingClientRect().width;
+  if(w > 10) sb.style.width = w + "px";
+}
 function renderTable(){
   const isPay = state.tab==="payments";
   const cols = isPay?COLS.payments:COLS.invoices;
@@ -686,19 +769,31 @@ function renderTable(){
     return `<th class="${c.num?'num':''}" data-key="${c.key}">${c.label} <span class="arrow">${ar}</span></th>`;
   }).join("")+"</tr>";
   thead.querySelectorAll("th").forEach(th=>th.onclick=()=>{
-    let k=th.dataset.key; if(state.tab!=="payments" && k==="total") k="owed";
+    let k=th.dataset.key;   // klik na hlavičku triedi podľa skutočného stĺpca (Suma = total)
     if(state.sort.key===k) state.sort.dir*=-1; else { state.sort.key=k; state.sort.dir=(k==="customer"||k==="name")?1:-1; }
     renderTable();
   });
 
   const rows=currentRows();
+  // súčet za aktuálnu kartu (rešpektuje aj vyhľadávanie)
+  {
+    const isPayTab = state.tab==="payments";
+    const sum = rows.reduce((s,x)=> s + (isPayTab ? (x.amount||0) : (x.total||0)), 0);
+    const labels = {unpaid:"Nezaplatené faktúry", partial:"Čiastočne uhradené", paid:"Zaplatené faktúry", all:"Všetky faktúry", payments:"Prijaté platby"};
+    const unit = isPayTab ? plur(rows.length,"platba","platby","platieb") : plur(rows.length,"faktúra","faktúry","faktúr");
+    $("#tabtotal").innerHTML =
+      `<span class="lbl">${labels[state.tab]||""}</span>`+
+      `<span class="sep">·</span><span>${rows.length} ${unit}</span>`+
+      `<span class="sum" id="tt-sum"><span class="sig">∑=</span>${sum.toLocaleString("sk-SK",{minimumFractionDigits:2,maximumFractionDigits:2})}<span class="cur">€</span></span>`;
+  }
   if(!rows.length){
     const msg = state.tab==="unpaid" ? "Žiadni neplatiči — všetky spárované faktúry sú uhradené."
       : state.tab==="payments" ? "Žiadne prijaté platby." : "Žiadne položky v tejto kategórii.";
     tbody.innerHTML = `<tr><td colspan="${cols.length}"><div class="empty"><div class="big">${msg}</div></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = rows.map(x=>{
+  state._rows = rows;
+  tbody.innerHTML = rows.map((x,idx)=>{
     if(isPay){
       let mcell;
       if(x.matchedBy==="vs") mcell='<span class="chip paid"><i></i>Áno · VS</span>';
@@ -714,8 +809,9 @@ function renderTable(){
     }
     const warn = x.outside ? `<span class="warn" title="Splatnosť mimo obdobia nahraných výpisov – platba mohla prebehnúť inde.">!</span>` : "";
     const approx = (x.matchedBy==="amount") ? `<span class="approx" title="Spárované podľa sumy, faktúra nemala platbu s rovnakým variabilným symbolom. Odporúčame overiť.">≈ podľa sumy</span>` : "";
-    return `<tr>
-      <td><span class="fid">${esc(x.number||"—")}</span></td>
+    const clickable = x._buf ? ` class="clickable" data-ri="${idx}" title="Kliknutím otvoríte PDF faktúry"` : "";
+    return `<tr${clickable}>
+      <td><span class="fid">${esc(x.number||"—")}</span>${x._buf?'<span class="openico">↗</span>':''}</td>
       <td class="cust">${esc(x.customer)}${warn}</td>
       <td class="num amt">${fmtEur(x.total)}</td>
       <td class="tnum">${x.due||"—"}</td>
@@ -725,6 +821,7 @@ function renderTable(){
       <td><span class="vs">${x.vs||"—"}</span></td>
     </tr>`;
   }).join("");
+  requestAnimationFrame(syncSearchWidth);
 }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
@@ -739,30 +836,151 @@ $("#tabs").onclick = e=>{
   renderTable();
 };
 $("#search").oninput = e=>{ state.search=e.target.value; renderTable(); };
+
+// otvorenie PDF faktúry po kliknutí na riadok
+function openInvoicePdf(buf){
+  if(!buf){ toast("PDF faktúry nie je dostupné"); return; }
+  try{
+    const url = URL.createObjectURL(new Blob([buf], {type:"application/pdf"}));
+    const w = window.open(url, "_blank");
+    if(!w) toast("Povoľte vyskakovacie okná pre zobrazenie PDF");
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }catch(err){ toast("Faktúru sa nepodarilo otvoriť"); }
+}
+$("#tbody").addEventListener("click", e=>{
+  const tr = e.target.closest("tr[data-ri]"); if(!tr) return;
+  const x = (state._rows||[])[+tr.dataset.ri];
+  if(x && x._buf) openInvoicePdf(x._buf);
+});
 $("#amt-toggle").onchange = e=>{ state.amountMatch=e.target.checked; reconcile(); render(); };
 
-$("#csv").onclick = ()=>{
+$("#csv").onclick = async ()=>{
   const isPay=state.tab==="payments";
   const rows=currentRows();
-  let head, lines;
+  let cols, dataRows;
   if(isPay){
-    head=["Dátum","Platiteľ","Suma EUR","VS","Priradené"];
-    const mlbl={vs:"áno (VS)",amount:"áno (suma)"};
-    lines=rows.map(x=>[x.date,x.name,money(x.amount),x.vs,mlbl[x.matchedBy]||"nie"]);
+    cols=[{t:"Dátum",w:13},{t:"Platiteľ",w:34},{t:"Suma (€)",w:14},{t:"VS",w:15},{t:"Priradené",w:18}];
+    dataRows=rows.map(x=>{
+      let pr = x.matchedBy==="vs" ? {v:"Áno · VS",k:"st-paid"}
+             : x.matchedBy==="amount" ? {v:"Áno · suma",k:"st-partial"}
+             : {v:"Nie",k:"muted"};
+      return [{v:x.date,k:"center"},{v:x.name,k:"text"},{v:x.amount,k:"money"},{v:x.vs||"",k:"center"},pr];
+    });
   }else{
-    head=["Faktúra","Odberateľ","Suma EUR","Splatnosť","Stav","Zaplatené EUR","Dátum platby","VS","Spárované podľa"];
+    cols=[{t:"Faktúra",w:14},{t:"Odberateľ",w:34},{t:"Suma (€)",w:14},{t:"Splatnosť",w:12},
+          {t:"Stav",w:15},{t:"Zaplatené (€)",w:14},{t:"Dátum platby",w:13},{t:"VS",w:14},{t:"Spárované podľa",w:16}];
     const lbl={paid:"Zaplatené",overpaid:"Preplatok",partial:"Čiastočne",unpaid:"Nezaplatené"};
+    const stK={paid:"st-paid",overpaid:"st-paid",partial:"st-partial",unpaid:"st-unpaid"};
     const mlbl={vs:"VS",amount:"suma (overiť)"};
-    lines=rows.map(x=>[x.number,x.customer,money(x.total),x.due||"",lbl[x.status],x.paid?money(x.paid):"",x.lastPayDate||"",x.vs,mlbl[x.matchedBy]||""]);
+    dataRows=rows.map(x=>[
+      {v:x.number||"",k:"center"},{v:x.customer,k:"text"},{v:x.total,k:"money"},{v:x.due||"",k:"center"},
+      {v:lbl[x.status]||"",k:stK[x.status]||"center"},
+      (x.paid>0?{v:x.paid,k:"money"}:{v:"",k:"center"}),
+      {v:x.lastPayDate||"—",k:"muted"},{v:x.vs||"",k:"center"},{v:mlbl[x.matchedBy]||"",k:"center"}
+    ]);
   }
-  const csv="\uFEFF"+[head,...lines].map(r=>r.map(csvCell).join(";")).join("\r\n");
-  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download=(state.tab==="payments"?"platby":state.tab==="unpaid"?"neplatici":"faktury")+"_"+new Date().toISOString().slice(0,10)+".csv";
-  a.click(); URL.revokeObjectURL(a.href); toast("CSV exportované");
+  const base={payments:"platby",unpaid:"neplatici",paid:"zaplatene",partial:"ciastocne",all:"faktury"}[state.tab]||"faktury";
+  const sheet={payments:"Prijaté platby",unpaid:"Neplatiči",paid:"Zaplatené",partial:"Čiastočne",all:"Všetky faktúry"}[state.tab]||"Faktúry";
+  try{
+    const blob=await buildXlsx(sheet, cols, dataRows);
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download=base+"_"+new Date().toISOString().slice(0,10)+".xlsx"; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast("Excel exportovaný");
+  }catch(e){ console.error(e); toast("Export zlyhal"); }
 };
-function money(n){ return n==null?"":n.toFixed(2).replace(".",","); }
-function csvCell(v){ v=String(v??""); return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+
+function xmlEsc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c])); }
+function colName(i){ let s=""; i++; while(i>0){ const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=(i-(m+1))/26|0; } return s; }
+
+async function buildXlsx(sheetName, cols, dataRows){
+  const STY={header:1,text:2,money:3,center:4,"st-unpaid":5,"st-paid":6,"st-partial":7,muted:8};
+  const nCols=cols.length, lastRow=dataRows.length+1, ref="A1:"+colName(nCols-1)+lastRow;
+  const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00\\ &quot;€&quot;"/></numFmts>'+
+    '<fonts count="6">'+
+    '<font><sz val="11"/><name val="Calibri"/></font>'+
+    '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
+    '<font><b/><sz val="11"/><color rgb="FFC42A45"/><name val="Calibri"/></font>'+
+    '<font><b/><sz val="11"/><color rgb="FF0E8A55"/><name val="Calibri"/></font>'+
+    '<font><b/><sz val="11"/><color rgb="FFB16500"/><name val="Calibri"/></font>'+
+    '<font><sz val="11"/><color rgb="FF98A2B3"/><name val="Calibri"/></font>'+
+    '</fonts>'+
+    '<fills count="6">'+
+    '<fill><patternFill patternType="none"/></fill>'+
+    '<fill><patternFill patternType="gray125"/></fill>'+
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF1F2A3D"/></patternFill></fill>'+
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFFBE7EB"/></patternFill></fill>'+
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFE5F3EC"/></patternFill></fill>'+
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFFAF0DD"/></patternFill></fill>'+
+    '</fills>'+
+    '<borders count="2">'+
+    '<border><left/><right/><top/><bottom/><diagonal/></border>'+
+    '<border><left style="thin"><color rgb="FFD0D5DD"/></left><right style="thin"><color rgb="FFD0D5DD"/></right><top style="thin"><color rgb="FFD0D5DD"/></top><bottom style="thin"><color rgb="FFD0D5DD"/></bottom><diagonal/></border>'+
+    '</borders>'+
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+    '<cellXfs count="9">'+
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>'+
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>'+
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+
+    '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+
+    '<xf numFmtId="0" fontId="3" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+
+    '<xf numFmtId="0" fontId="4" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+
+    '<xf numFmtId="0" fontId="5" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+
+    '</cellXfs>'+
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'+
+    '</styleSheet>';
+
+  let colsXml="<cols>";
+  cols.forEach((c,i)=> colsXml+=`<col min="${i+1}" max="${i+1}" width="${c.w}" customWidth="1"/>`);
+  colsXml+="</cols>";
+
+  function cellXml(rowNo, ci, cell){
+    const cref=colName(ci)+rowNo, s=STY[cell.k]||2;
+    if(cell.k==="money"){
+      if(cell.v==null||cell.v==="") return `<c r="${cref}" s="4"/>`;
+      return `<c r="${cref}" s="${s}"><v>${cell.v}</v></c>`;
+    }
+    const v=(cell.v==null?"":String(cell.v));
+    if(v==="") return `<c r="${cref}" s="${s}"/>`;
+    return `<c r="${cref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
+  }
+  let sd='<sheetData><row r="1" ht="24" customHeight="1">';
+  cols.forEach((c,i)=> sd+=cellXml(1,i,{v:c.t,k:"header"}));
+  sd+="</row>";
+  dataRows.forEach((row,ri)=>{
+    const r=ri+2; sd+=`<row r="${r}" ht="20" customHeight="1">`;
+    row.forEach((cell,ci)=> sd+=cellXml(r,ci,cell));
+    sd+="</row>";
+  });
+  sd+="</sheetData>";
+
+  const sheetXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    `<dimension ref="${ref}"/>`+
+    '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView></sheetViews>'+
+    '<sheetFormatPr defaultRowHeight="18"/>'+
+    colsXml + sd +
+    `<autoFilter ref="${ref}"/>`+
+    '</worksheet>';
+
+  const ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
+  const relsRoot='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+  const workbook='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="'+xmlEsc(sheetName).slice(0,31)+'" sheetId="1" r:id="rId1"/></sheets></workbook>';
+  const wbRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+
+  const zip=new JSZip();
+  zip.file("[Content_Types].xml", ct);
+  zip.folder("_rels").file(".rels", relsRoot);
+  const xl=zip.folder("xl");
+  xl.file("workbook.xml", workbook);
+  xl.folder("_rels").file("workbook.xml.rels", wbRels);
+  xl.file("styles.xml", styles);
+  xl.folder("worksheets").file("sheet1.xml", sheetXml);
+  return await zip.generateAsync({type:"blob", mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
 
 $("#copy").onclick = ()=>{
   const rows=currentRows();
@@ -784,6 +1002,7 @@ $("#reset").onclick = ()=>{
 wireZone("#zone-fakt","#in-fakt","fakt");
 wireZone("#zone-vyp","#in-vyp","vyp");
 renderFiles(); updateRun();
+window.addEventListener("resize", ()=>requestAnimationFrame(syncSearchWidth));
 if(!window.pdfjsLib || !window.JSZip){
   $("#status").textContent="Knižnice na čítanie PDF/ZIP sa nenačítali – skontrolujte pripojenie na internet.";
 }
